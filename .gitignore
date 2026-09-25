@@ -1,0 +1,38 @@
+# Build outputs
+/dist/
+*.so
+*.so.*
+*.h
+!cabi.h
+/cpa-groq
+*.test
+*.out
+coverage.*
+
+# Secrets and local configuration: never commit
+*.env
+.env*
+config.yaml
+config.yml
+*.key
+*secret*
+*credential*
+auths/
+
+# Private test data: real recordings and transcripts never belong here
+*.ogg
+*.oga
+*.opus
+*.mp3
+*.m4a
+*.mp4
+*.wav
+*.flac
+*.webm
+testdata/private/
+*.transcript*
+
+# Editor/OS noise
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,24 @@
+version: "2"
+run:
+  tests: true
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - gosec
+    - errorlint
+    - misspell
+    - nilerr
+    - unconvert
+    - bodyclose
+    - copyloopvar
+    - durationcheck
+  settings:
+    gosec:
+      excludes:
+        - G103 # unsafe is required for the C ABI boundary (reviewed in cabi.go)
+  exclusions:
+    presets:
+      - std-error-handling
+formatters:
+  enable:
+    - gofmt
