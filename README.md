@@ -279,6 +279,17 @@ Center puts the library in place; the auth marker file and the config block belo
 needed, because the plugin needs a Groq API key and CPA only routes plugin models
 through an auth record of the plugin's provider (see "The auth record CPA needs").
 
+Tested end to end (store install → auth marker → key → transcription, no restart). Two things
+to know:
+
+- A store install makes CPA **rewrite `config.yaml`**: it adds a `plugins.configs.cpa-groq` block
+  with a `store:` section and fills in every default setting. Put `api_key` (and any other
+  option) **into that block**; a second `configs:` key makes the YAML invalid, and CPA then keeps
+  running on the previous config and logs `failed to reload config`.
+- Until `api_key` is set, CPA logs `cpa-groq: rejected configuration reason="invalid config:
+  api_key is required"` and the models stay hidden. This is expected; the plugin registers as
+  soon as a valid config is reloaded.
+
 Release assets follow the store layout: `cpa-groq_<version>_linux_amd64.zip` (holding
 `cpa-groq.so` at the zip root) and `checksums.txt`. `make build && make package` produces them in
 `dist/store/`, reproducibly.
