@@ -190,9 +190,11 @@ CPA's auth manager reacts to executor errors per auth record and model, as it do
 provider. Useful to know when operating this plugin:
 
 - 400 / 409 / 413 / 422 are request faults: no cooldown.
-- 401 / 402 / 403 put the model on that auth into a **30-minute** cooldown, even after you fix
-  the key. To recover immediately, disable and re-enable the auth record (Management Center, or
-  set `"disabled": true` in the auth file and remove it again). This was verified end to end.
+- 401 / 402 / 403 put the auth record into a **30-minute** cooldown that survives fixing the key.
+  In testing, right after a 401 CPA refused **both** models on that auth record (HTTP 503
+  `auth_unavailable`) even with the correct key reloaded. To recover immediately, disable and
+  re-enable the auth record (Management Center, or set `"disabled": true` in the auth file and
+  remove it again); both models then worked again. This was verified end to end.
 - 404 cools the model down for 12 hours; 429 uses CPA's quota backoff; 408/5xx/504 use the
   transient cooldown (1 minute by default, `transient-error-cooldown-seconds`).
 - `request-retry` and multiple auth records make CPA retry on another auth; each retry uploads
