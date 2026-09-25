@@ -9,6 +9,7 @@ GITLEAKS_IMAGE := zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb
 CACHE_DIR ?= $(HOME)/.cache/cpa-groq-build
 DIST      := dist/linux-amd64
 ARTIFACT  := $(DIST)/cpa-groq-v$(VERSION).so
+STORE     := dist/store
 
 DOCKER_RUN = docker run --rm --network=bridge \
 	--user $$(id -u):$$(id -g) \
@@ -16,7 +17,7 @@ DOCKER_RUN = docker run --rm --network=bridge \
 	-e GOCACHE=/cache/go-build -e GOMODCACHE=/cache/gomod -e GOLANGCI_LINT_CACHE=/cache/golangci \
 	-v $(CURDIR):/src -v $(CACHE_DIR):/cache -w /src
 
-.PHONY: all build test vet lint check gitleaks clean checksum
+.PHONY: all build test vet lint check gitleaks clean checksum package
 
 all: check build
 
@@ -31,6 +32,15 @@ build: | $(CACHE_DIR)
 		-ldflags='-s -w -buildid=' -o $(ARTIFACT) .
 	rm -f $(DIST)/cpa-groq-v$(VERSION).h
 	$(MAKE) --no-print-directory checksum
+
+# Plugin-store assets for the GitHub release: <id>_<version>_linux_amd64.zip (cpa-groq.so at the
+# zip root) and checksums.txt. Wraps the library that `make build` produced; reproducible.
+package: | $(CACHE_DIR)
+	@test -s $(ARTIFACT) || { echo "$(ARTIFACT) missing: run make build first"; exit 1; }
+	rm -rf $(STORE)
+	$(DOCKER_RUN) $(GO_IMAGE) go run ./tools/storezip -so $(ARTIFACT) -id cpa-groq \
+		-version $(VERSION) -goos linux -goarch amd64 -out $(STORE)
+	cd $(STORE) && sha256sum -c checksums.txt
 
 checksum:
 	cd $(DIST) && sha256sum cpa-groq-v$(VERSION).so | tee cpa-groq-v$(VERSION).so.sha256

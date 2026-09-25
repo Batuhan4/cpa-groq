@@ -272,7 +272,18 @@ release checksum byte for byte. The library links only against `libc.so.6`, carr
 
 The image is Debian bookworm, the same base as CPA's release image, so the glibc baseline matches.
 
-## Install into CPA
+## Install from the CLIProxyAPI plugin store
+
+When installed from the CLIProxyAPI plugin store (id `cpa-groq`, linux/amd64), the Management
+Center puts the library in place; the auth marker file and the config block below are still
+needed, because the plugin needs a Groq API key and CPA only routes plugin models
+through an auth record of the plugin's provider (see "The auth record CPA needs").
+
+Release assets follow the store layout: `cpa-groq_<version>_linux_amd64.zip` (holding
+`cpa-groq.so` at the zip root) and `checksums.txt`. `make build && make package` produces them in
+`dist/store/`, reproducibly.
+
+## Install into CPA manually
 
 1. **The plugin directory must be a bind mount.** `plugins.dir` resolves against CPA's working
    directory (`/CLIProxyAPI/plugins` in the Docker image). If it is not bind-mounted, the plugin
@@ -337,6 +348,12 @@ from the plugin directory**, so keep rollback copies outside it.
   ABI version change the plugin refuses to load (CPA logs it; the models disappear) rather than
   guessing at struct layouts; a JSON contract change surfaces as request errors, not crashes.
   Re-run `scripts/smoke.py` after CPA upgrades.
+- **Groq's Turkish output can be silently damaged.** On a 4:45 real Turkish voice note, both
+  `whisper-large-v3` and `-turbo` returned six ~30-second stretches where every word stops at its
+  first non-ASCII letter ("fabrikası" → "fabrikas", "lazım" → "laz") and punctuation disappears,
+  while `no_speech_prob` and `avg_logprob` looked normal. Calling Groq directly (no CPA, no plugin)
+  gives the same text, with `json` or `verbose_json`, with a Turkish prompt and as 16 kHz FLAC, so
+  it is upstream behaviour the plugin cannot detect. Test on your own language before relying on it.
 
 ## Development
 
@@ -345,6 +362,10 @@ from the plugin directory**, so keep rollback copies outside it.
 - Test audio is generated (sine-tone WAV and signature stubs). No recorded speech or transcript
   is committed to this repository.
 - `scripts/smoke.py` sends a generated tone through a running CPA and checks the response shape.
+- Release checklist: bump `VERSION` (Makefile) and `pluginVersion` (models.go), update the
+  changelog, tag `v<version>`, `make check build package`, then upload `dist/linux-amd64/*.so*` and
+  `dist/store/*` to the GitHub release. The store always installs from the latest release, so a
+  release without the zip and `checksums.txt` breaks store installs.
 
 ## License
 

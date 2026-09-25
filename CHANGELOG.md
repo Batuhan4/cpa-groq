@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `make package` and `tools/storezip`: reproducible plugin-store assets
+  (`cpa-groq_<version>_linux_amd64.zip` + `checksums.txt`). The v0.1.0 release carries them too,
+  wrapping the unchanged v0.1.0 library.
+- README: plugin-store install, release checklist, and a known limitation (Groq's Turkish output
+  can be silently truncated upstream).
+
 ## [0.1.0] - 2026-09-25
 
 First release, built and tested against CLIProxyAPI v7.3.17 (commit `9bdde54`, plugin C ABI 1).
