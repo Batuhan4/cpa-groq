@@ -8,7 +8,7 @@ import (
 
 const (
 	pluginName    = "cpa-groq"
-	pluginVersion = "0.1.0"
+	pluginVersion = "0.1.1"
 	pluginAuthor  = "batuhan4"
 	pluginRepo    = "https://github.com/Batuhan4/cpa-groq"
 

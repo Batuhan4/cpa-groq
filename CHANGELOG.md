@@ -6,13 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-26
+
 ### Added
+- Release builds for every CLIProxyAPI plugin-store platform: `darwin_amd64`, `darwin_arm64`,
+  `linux_amd64`, `linux_arm64` and `windows_amd64`, built natively by the `Release` GitHub
+  Actions workflow and published with one `checksums.txt`.
 - `make package` and `tools/storezip`: reproducible plugin-store assets
-  (`cpa-groq_<version>_linux_amd64.zip` + `checksums.txt`). The v0.1.0 release carries them too,
-  wrapping the unchanged v0.1.0 library.
-- README: plugin-store install (tested end to end, including CPA rewriting `config.yaml` on a
-  store install), release checklist, and a known limitation (Groq's Turkish output can be
-  silently truncated upstream).
+  (`cpa-groq_<version>_<goos>_<goarch>.zip` + `checksums.txt`).
+- README: plugin-store install (including CPA rewriting `config.yaml` on a store install),
+  release checklist, and a known limitation (Groq's Turkish output can be silently truncated
+  upstream).
+
+### Changed
+- `cabi.h`: the hidden-visibility attribute on internal C helpers applies to ELF/Mach-O only;
+  Windows DLLs export only marked symbols anyway.
 
 ## [0.1.0] - 2026-09-25
 

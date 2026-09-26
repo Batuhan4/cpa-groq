@@ -33,8 +33,13 @@ typedef struct {
 } cliproxy_plugin_api;
 
 /* Internal helpers: hidden so the only symbol CPA can see is cliproxy_plugin_init
- * (plus the Go export wrappers). */
+ * (plus the Go export wrappers). A Windows DLL exports only what is marked for
+ * export, so there the attribute is unnecessary (and unsupported by MinGW). */
+#if defined(_WIN32)
+#define CPA_GROQ_INTERNAL
+#else
 #define CPA_GROQ_INTERNAL __attribute__((visibility("hidden")))
+#endif
 
 CPA_GROQ_INTERNAL void cpa_groq_store_host(const cliproxy_host_api* host);
 CPA_GROQ_INTERNAL int cpa_groq_have_host(void);

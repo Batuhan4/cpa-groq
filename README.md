@@ -259,7 +259,7 @@ Everything runs in pinned containers; nothing is installed on the host.
 
 ```sh
 make check   # go vet, golangci-lint v2.13.2, go test -race (with and without -tags cabitest)
-make build   # dist/linux-amd64/cpa-groq-v0.1.0.so (+ .sha256)
+make build   # dist/linux-amd64/cpa-groq-v0.1.1.so (+ .sha256)
 ```
 
 The build uses `golang:1.26.8-bookworm@sha256:9fdc884a…`, `GOFLAGS=-mod=readonly`,
@@ -274,7 +274,7 @@ The image is Debian bookworm, the same base as CPA's release image, so the glibc
 
 ## Install from the CLIProxyAPI plugin store
 
-When installed from the CLIProxyAPI plugin store (id `cpa-groq`, linux/amd64), the Management
+When installed from the CLIProxyAPI plugin store (id `cpa-groq`), the Management
 Center puts the library in place; the auth marker file and the config block below are still
 needed, because the plugin needs a Groq API key and CPA only routes plugin models
 through an auth record of the plugin's provider (see "The auth record CPA needs").
@@ -290,9 +290,12 @@ to know:
   api_key is required"` and the models stay hidden. This is expected; the plugin registers as
   soon as a valid config is reloaded.
 
-Release assets follow the store layout: `cpa-groq_<version>_linux_amd64.zip` (holding
-`cpa-groq.so` at the zip root) and `checksums.txt`. `make build && make package` produces them in
-`dist/store/`, reproducibly.
+Release assets follow the store layout: one `cpa-groq_<version>_<goos>_<goarch>.zip` per
+platform (`darwin_amd64`, `darwin_arm64`, `linux_amd64`, `linux_arm64`, `windows_amd64`), each
+holding `cpa-groq.dylib`, `cpa-groq.so` or `cpa-groq.dll` at the zip root, plus one
+`checksums.txt`. The `Release` GitHub Actions workflow builds every platform natively and
+publishes them when a `v<version>` tag is pushed. Locally, `make build && make package` produces
+the linux/amd64 zip in `dist/store/`, reproducibly.
 
 ## Install into CPA manually
 
@@ -303,7 +306,8 @@ Release assets follow the store layout: `cpa-groq_<version>_linux_amd64.zip` (ho
    volumes:
      - ./plugins:/CLIProxyAPI/plugins
    ```
-2. Copy the library as `plugins/linux/amd64/cpa-groq-v<version>.so` (the file name defines the
+2. Copy the library as `plugins/<goos>/<goarch>/cpa-groq-v<version>.<so|dylib|dll>` (e.g.
+   `plugins/linux/amd64/cpa-groq-v<version>.so`; the file name defines the
    plugin id `cpa-groq` and the version) and verify its SHA-256.
 3. Create the auth marker file `cpa-groq.json` (above) in CPA's `auth-dir`.
 4. Add the `plugins.configs.cpa-groq` block (above) to `config.yaml` and let CPA reload it.
@@ -374,9 +378,10 @@ from the plugin directory**, so keep rollback copies outside it.
   is committed to this repository.
 - `scripts/smoke.py` sends a generated tone through a running CPA and checks the response shape.
 - Release checklist: bump `VERSION` (Makefile) and `pluginVersion` (models.go), update the
-  changelog, tag `v<version>`, `make check build package`, then upload `dist/linux-amd64/*.so*` and
-  `dist/store/*` to the GitHub release. The store always installs from the latest release, so a
-  release without the zip and `checksums.txt` breaks store installs.
+  changelog, `make check`, then push the tag `v<version>`. The `Release` workflow refuses a tag
+  that does not match `pluginVersion`, builds all five platform zips and publishes them with
+  `checksums.txt`. The store always installs from the latest release, so a release without the
+  zips and `checksums.txt` breaks store installs.
 
 ## License
 

@@ -1,0 +1,123 @@
+name: Release
+
+# Builds the plugin library natively on each store platform and, on a v* tag,
+# publishes <id>_<version>_<goos>_<goarch>.zip for every platform plus checksums.txt.
+
+on:
+  pull_request:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PLUGIN_ID: cpa-groq
+  GO_VERSION: '1.26.8'
+  GOFLAGS: -mod=readonly
+  GOTOOLCHAIN: local
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - run: go vet ./... && go vet -tags cabitest ./...
+      - run: go test -race -count=1 ./... && go test -race -count=1 -tags cabitest ./...
+
+  build:
+    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    needs: test
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64, runner: ubuntu-24.04, ext: so }
+          - { goos: linux, goarch: arm64, runner: ubuntu-24.04-arm, ext: so }
+          - { goos: darwin, goarch: amd64, runner: macos-15-intel, ext: dylib }
+          - { goos: darwin, goarch: arm64, runner: macos-15, ext: dylib }
+          - { goos: windows, goarch: amd64, runner: windows-2025, ext: dll }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Resolve version
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -n 's/^[[:space:]]*pluginVersion = "\(.*\)"/\1/p' models.go)
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" != "v${VERSION}" ]]; then
+            echo "tag ${GITHUB_REF_NAME} does not match pluginVersion ${VERSION}" >&2
+            exit 1
+          fi
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+
+      - name: Build shared library
+        env:
+          CGO_ENABLED: '1'
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist/lib
+          go build -buildmode=c-shared -trimpath -buildvcs=true \
+            -ldflags='-s -w -buildid=' -o "dist/lib/${PLUGIN_ID}.${{ matrix.ext }}" .
+          rm -f "dist/lib/${PLUGIN_ID}.h"
+
+      - name: Package plugin
+        run: |
+          set -euo pipefail
+          go run ./tools/storezip -so "dist/lib/${PLUGIN_ID}.${{ matrix.ext }}" -id "${PLUGIN_ID}" \
+            -version "${VERSION}" -goos ${{ matrix.goos }} -goarch ${{ matrix.goarch }} -out dist/store
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.PLUGIN_ID }}_${{ env.VERSION }}_${{ matrix.goos }}_${{ matrix.goarch }}
+          path: dist/store/*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Write checksums.txt
+        run: |
+          set -euo pipefail
+          cd dist
+          test "$(ls *.zip | wc -l)" -eq 5
+          sha256sum *.zip > checksums.txt
+          cat checksums.txt
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" dist/*.zip dist/checksums.txt --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" dist/*.zip dist/checksums.txt \
+              --verify-tag --title "${GITHUB_REF_NAME}" --notes-file <(sed -n "/^## \[${GITHUB_REF_NAME#v}\]/,/^## \[/p" CHANGELOG.md | sed '1d;$d')
+          fi
