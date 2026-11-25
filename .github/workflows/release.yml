@@ -15,7 +15,7 @@ permissions:
 
 env:
   PLUGIN_ID: cpa-groq
-  GO_VERSION: '1.26.8'
+  GO_VERSION: '1.26.11'
   GOFLAGS: -mod=readonly
   GOTOOLCHAIN: local
 

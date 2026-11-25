@@ -259,10 +259,10 @@ Everything runs in pinned containers; nothing is installed on the host.
 
 ```sh
 make check   # go vet, golangci-lint v2.13.2, go test -race (with and without -tags cabitest)
-make build   # dist/linux-amd64/cpa-groq-v0.1.1.so (+ .sha256)
+make build   # dist/linux-amd64/cpa-groq-v0.1.2.so (+ .sha256)
 ```
 
-The build uses `golang:1.26.8-bookworm@sha256:9fdc884a…`, `GOFLAGS=-mod=readonly`,
+The build uses `golang:1.26.11-bookworm@sha256:dc40a13b…`, `GOFLAGS=-mod=readonly`,
 `GOTOOLCHAIN=local`, `-trimpath`, `-buildvcs=true`, `-ldflags='-s -w -buildid='` and
 `-buildmode=c-shared`. The CPA SDK is pinned to `github.com/router-for-me/CLIProxyAPI/v7
 v7.3.17` (commit `9bdde54`). Building the tagged commit from a clean checkout reproduces the

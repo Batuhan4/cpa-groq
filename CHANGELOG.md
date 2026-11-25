@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-25
+
+### Security
+- Rebuilt with Go 1.26.11: stdlib security fixes. Build image pinned to
+  `golang:1.26.11-bookworm@sha256:dc40a13b…`; the release workflow uses Go 1.26.11.
+
 ## [0.1.1] - 2026-09-26
 
 ### Added

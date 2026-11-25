@@ -1,8 +1,8 @@
 # Every target runs inside pinned container images; nothing is installed on
 # the host. The Go module and build caches live outside the repository.
 
-VERSION        := 0.1.1
-GO_IMAGE       := golang:1.26.8-bookworm@sha256:9fdc884aacc3bec89b20ffc69f4bb369c78210e3e4f600387b5128b12c199f81
+VERSION        := 0.1.2
+GO_IMAGE       := golang:1.26.11-bookworm@sha256:dc40a13b61304647ed7e5d581d246b86413dfc29d63c6d018310feb93cd98fc0
 LINT_IMAGE     := golangci/golangci-lint:v2.13.2@sha256:ba07dffad130794ae79ebaa0056809d18c0168f3f846480ffd3eb6c04578b83d
 GITLEAKS_IMAGE := zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
 
